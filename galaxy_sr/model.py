@@ -63,8 +63,9 @@ class GalaxySR(nn.Module):
 def load_trained(path: str = "weights/galaxy_sr.pt", device=None):
     """Load a checkpoint saved by train.py. Returns (model, info dict).
 
-    Uses the GPU when there is one -- on a CPU the model still works, it just
-    takes a couple of seconds per galaxy instead of a fraction of one.
+    Uses the GPU when there is one. On a CPU the model still works and is
+    still fast enough to demo live -- a fraction of a second per galaxy
+    rather than a couple of milliseconds.
     """
     device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     ckpt = torch.load(path, map_location=device, weights_only=False)

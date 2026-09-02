@@ -224,47 +224,47 @@ def build_dataset(root: str | Path = "data", n_train: int = 300,
     if online:
         deadline = time.time() + budget_min * 60
 
-        def fetch(job):
-            """Download one cutout to disk. Returns (label, ok)."""
+        def fetch(job) -> bool:
+            """Download one cutout to disk. Returns True if the file is there."""
             path, ra, dec, scale, px = job
-            if path.exists() or time.time() > deadline:
-                return path.stem, path.exists()
+            if path.exists():
+                return True
+            if time.time() > deadline:
+                return False
             try:
                 sdss_cutout(ra, dec, scale, px).save(path)
-                return path.stem, True
+                return True
             except Exception:
-                return path.stem, False
+                return False
 
-        # the hero images for the live demo: a handful of famous galaxies
-        demo_jobs = [(demo_dir / f"{name}.png", ra, dec, scale, 512)
-                     for name, ra, dec, scale in FAMOUS]
-        # the training set: a few hundred ordinary galaxies
+        def fetch_all(jobs, label) -> int:
+            got = 0
+            with ThreadPoolExecutor(max_workers=workers) as pool:
+                for ok in pool.map(fetch, jobs):
+                    got += ok
+                    if verbose and got and got % 25 == 0:
+                        print(f"  {label}: {got}/{len(jobs)} "
+                              f"({(deadline - time.time()) / 60:.1f} min left)")
+            return got
+
+        # The hero images for the live demo go first and are never skipped --
+        # they are the ones the room will actually look at.
+        n_demo = fetch_all([(demo_dir / f"{name}.png", ra, dec, scale, 512)
+                            for name, ra, dec, scale in FAMOUS], "demo images")
+
+        # Then the training set: a few hundred ordinary galaxies.
         try:
             coords = sdss_galaxy_list(n_train * 2)
         except Exception as e:
             print(f"  galaxy list failed ({e}); falling back to famous list")
             coords = [(ra, dec) for _, ra, dec, _ in FAMOUS]
-        train_jobs = [(train_dir / f"sdss_{ra:.5f}_{dec:+.5f}.png",
-                       ra, dec, 0.4, size) for ra, dec in coords]
+        jobs = [(train_dir / f"sdss_{ra:.5f}_{dec:+.5f}.png", ra, dec, 0.4, size)
+                for ra, dec in coords][:max(0, n_train - n_have)]
+        n_got = fetch_all(jobs, "training images")
 
-        done = failed = 0
-        with ThreadPoolExecutor(max_workers=workers) as pool:
-            futures = {pool.submit(fetch, j): j for j in demo_jobs + train_jobs}
-            for fut in as_completed(futures):
-                _, ok = fut.result()
-                done += ok
-                failed += not ok
-                if verbose and done and done % 25 == 0:
-                    print(f"  downloaded {done} ({failed} skipped, "
-                          f"{(deadline - time.time()) / 60:.1f} min left)")
-                # stop early once we have enough, or once the clock runs out
-                if (len(list(train_dir.glob("*.png"))) >= n_train
-                        or time.time() > deadline):
-                    for f in futures:
-                        f.cancel()
-                    break
         if verbose:
-            print(f"  downloaded {done} images ({failed} skipped).")
+            print(f"  got {n_demo}/{len(FAMOUS)} demo and {n_got}/{len(jobs)} "
+                  "training images from SDSS.")
         source = "SDSS"
     else:
         source = "simulated"

@@ -34,8 +34,8 @@ away.
 > `torch.cuda.is_available()` is `False` and you get a "driver is too old"
 > warning, install the build for your CUDA version, e.g.
 > `./venv/bin/pip install --index-url https://download.pytorch.org/whl/cu128 torch`.
-> Everything also runs on CPU — a couple of seconds per galaxy instead of
-> two milliseconds.
+> Everything also runs on CPU, and fast enough to present from: a fraction
+> of a second per galaxy rather than two milliseconds.
 
 ### Retraining from scratch (optional)
 

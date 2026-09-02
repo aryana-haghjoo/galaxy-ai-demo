@@ -209,8 +209,9 @@ fake the held-out score. Assignments that ask "did it work, and how do you
 know?" are much harder to cheat than assignments that ask for an answer.
 
 **"Do we need GPUs?"**
-Not for this. It trains on a free Colab GPU in about ten minutes, and on a
-laptop overnight. Cost of entry is zero.
+Not for this. It trains on a free Colab GPU in about ten minutes. And once
+it is trained, sharpening a galaxy takes a fraction of a second on an
+ordinary laptop CPU — no graphics card at all. Cost of entry is zero.
 
 **"What would this look like in my subject?"**
 Same skeleton, different data: damaged historical text, noisy audio, low-res
