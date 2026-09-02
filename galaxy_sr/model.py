@@ -60,12 +60,21 @@ class GalaxySR(nn.Module):
         return sum(p.numel() for p in self.parameters())
 
 
-def load_trained(path: str = "weights/galaxy_sr.pt", device="cpu"):
-    """Load a checkpoint saved by train.py. Returns (model, info dict)."""
+def load_trained(path: str = "weights/galaxy_sr.pt", device=None):
+    """Load a checkpoint saved by train.py. Returns (model, info dict).
+
+    Uses the GPU when there is one -- on a CPU the model still works, it just
+    takes a couple of seconds per galaxy instead of a fraction of one.
+    """
+    device = device or ("cuda" if torch.cuda.is_available() else "cpu")
     ckpt = torch.load(path, map_location=device, weights_only=False)
     cfg = ckpt.get("config", {})
     model = GalaxySR(cfg.get("channels", 64), cfg.get("blocks", 12),
                      cfg.get("factor", 4))
     model.load_state_dict(ckpt["state_dict"])
     model.eval().to(device)
+    # Remember how this model was taught to see. The demo has to damage its
+    # images exactly the way training did, or we would be asking the network
+    # to undo a kind of blur it has never met.
+    model.cfg = cfg
     return model, ckpt.get("info", {})

@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import time
 from pathlib import Path
 
 import matplotlib.pyplot as plt
@@ -53,9 +54,40 @@ def sharpen(model, low_res: torch.Tensor, device=None) -> torch.Tensor:
 
 
 @torch.no_grad()
-def run_all(model, image: np.ndarray, factor: int = 4, sigma: float = 1.6,
-            noise: float = 0.012, seed: int = 0) -> dict:
-    """Truth -> simulated small telescope -> both reconstructions."""
+def time_sharpen(model, low_res: torch.Tensor, repeats: int = 5) -> float:
+    """Seconds the network itself takes on one image, measured honestly.
+
+    The GPU runs asynchronously, so we have to wait for it before stopping the
+    clock -- otherwise you time how fast Python can queue work, not how fast
+    the model is.
+    """
+    device = next(model.parameters()).device
+    lo = low_res.to(device)
+    model(lo)                                    # warm-up, not counted
+    if device.type == "cuda":
+        torch.cuda.synchronize()
+    t0 = time.perf_counter()
+    for _ in range(repeats):
+        model(lo)
+    if device.type == "cuda":
+        torch.cuda.synchronize()
+    return (time.perf_counter() - t0) / repeats
+
+
+@torch.no_grad()
+def run_all(model, image: np.ndarray, factor: int | None = None,
+            sigma: float | None = None, noise: float | None = None,
+            seed: int = 0) -> dict:
+    """Truth -> simulated small telescope -> both reconstructions.
+
+    The damage defaults to whatever this model was trained to undo, which is
+    recorded in the checkpoint. Override it only to show what happens when
+    the test does not match the training.
+    """
+    cfg = getattr(model, "cfg", {})
+    factor = factor if factor is not None else cfg.get("factor", 4)
+    sigma = sigma if sigma is not None else cfg.get("sigma", 1.6)
+    noise = noise if noise is not None else cfg.get("noise", 0.012)
     hr = to_tensor(image, factor)
     g = torch.Generator().manual_seed(seed)
     lo = degrade(hr, factor, sigma, noise, generator=g)

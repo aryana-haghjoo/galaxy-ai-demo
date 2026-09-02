@@ -14,9 +14,10 @@ network.
 from __future__ import annotations
 
 import io
-import os
+import time
 import urllib.parse
 import urllib.request
+from concurrent.futures import ThreadPoolExecutor, as_completed
 from pathlib import Path
 
 import numpy as np
@@ -55,16 +56,28 @@ FAMOUS = [
 # --------------------------------------------------------------------------
 # real data
 # --------------------------------------------------------------------------
-def _get(url: str, timeout: int = 30) -> bytes:
+def _get(url: str, timeout: int = 20, tries: int = 3) -> bytes:
+    """Fetch a URL, retrying a couple of times.
+
+    The SDSS servers are public and free, which also means they are busy: a
+    request times out every fifth try or so. Retrying is not optional.
+    """
     req = urllib.request.Request(url, headers={"User-Agent": "galaxy-sr-demo/1.0"})
-    with urllib.request.urlopen(req, timeout=timeout) as r:
-        return r.read()
+    for attempt in range(tries):
+        try:
+            with urllib.request.urlopen(req, timeout=timeout) as r:
+                return r.read()
+        except Exception:
+            if attempt == tries - 1:
+                raise
+            time.sleep(1.0 + attempt)
+    raise RuntimeError("unreachable")
 
 
-def have_internet(timeout: int = 8) -> bool:
+def have_internet(timeout: int = 10) -> bool:
     try:
         _get(SDSS_BASE + "/ImgCutout/getjpeg?ra=202.4696&dec=47.1952"
-             "&scale=1.0&width=64&height=64", timeout=timeout)
+             "&scale=1.0&width=64&height=64", timeout=timeout, tries=2)
         return True
     except Exception:
         return False
@@ -90,7 +103,7 @@ def sdss_galaxy_list(n: int = 400) -> list[tuple[float, float]]:
         "AND clean = 1"
     )
     q = urllib.parse.urlencode({"cmd": sql, "format": "csv"})
-    text = _get(f"{SQL_URL}?{q}", timeout=90).decode("utf-8", "replace")
+    text = _get(f"{SQL_URL}?{q}", timeout=60, tries=2).decode("utf-8", "replace")
     out = []
     for line in text.splitlines():
         parts = line.split(",")
@@ -182,8 +195,15 @@ def synthetic_galaxy(size: int = 256, rng: np.random.Generator | None = None,
 # the one function the notebooks call
 # --------------------------------------------------------------------------
 def build_dataset(root: str | Path = "data", n_train: int = 300,
-                  size: int = 256, verbose: bool = True) -> dict:
-    """Fill `root/train` and `root/demo` with galaxy PNGs. Safe to re-run."""
+                  size: int = 256, verbose: bool = True, workers: int = 8,
+                  budget_min: float = 8.0) -> dict:
+    """Fill `root/train` and `root/demo` with galaxy PNGs. Safe to re-run.
+
+    Downloads run in parallel (`workers` at a time) and give up after
+    `budget_min` minutes, whatever they have managed to get. Anything still
+    missing is topped up with simulated galaxies, so this function always
+    returns a usable dataset -- slow server, flaky wifi, or no wifi at all.
+    """
     root = Path(root)
     train_dir, demo_dir = root / "train", root / "demo"
     train_dir.mkdir(parents=True, exist_ok=True)
@@ -202,37 +222,49 @@ def build_dataset(root: str | Path = "data", n_train: int = 300,
               "No connection to SDSS -- using simulated galaxies instead.")
 
     if online:
-        for name, ra, dec, scale in FAMOUS:
-            f = demo_dir / f"{name}.png"
-            if f.exists():
-                continue
-            try:
-                sdss_cutout(ra, dec, scale, 512).save(f)
-                if verbose:
-                    print(f"  demo   {name}")
-            except Exception as e:
-                print(f"  skipped {name}: {e}")
+        deadline = time.time() + budget_min * 60
 
+        def fetch(job):
+            """Download one cutout to disk. Returns (label, ok)."""
+            path, ra, dec, scale, px = job
+            if path.exists() or time.time() > deadline:
+                return path.stem, path.exists()
+            try:
+                sdss_cutout(ra, dec, scale, px).save(path)
+                return path.stem, True
+            except Exception:
+                return path.stem, False
+
+        # the hero images for the live demo: a handful of famous galaxies
+        demo_jobs = [(demo_dir / f"{name}.png", ra, dec, scale, 512)
+                     for name, ra, dec, scale in FAMOUS]
+        # the training set: a few hundred ordinary galaxies
         try:
-            coords = sdss_galaxy_list(n_train + 100)
+            coords = sdss_galaxy_list(n_train * 2)
         except Exception as e:
             print(f"  galaxy list failed ({e}); falling back to famous list")
             coords = [(ra, dec) for _, ra, dec, _ in FAMOUS]
+        train_jobs = [(train_dir / f"sdss_{ra:.5f}_{dec:+.5f}.png",
+                       ra, dec, 0.4, size) for ra, dec in coords]
 
-        got = n_have
-        for i, (ra, dec) in enumerate(coords):
-            if got >= n_train:
-                break
-            f = train_dir / f"sdss_{ra:.5f}_{dec:+.5f}.png"
-            if f.exists():
-                continue
-            try:
-                sdss_cutout(ra, dec, 0.4, size).save(f)
-                got += 1
-                if verbose and got % 25 == 0:
-                    print(f"  downloaded {got}/{n_train}")
-            except Exception:
-                continue
+        done = failed = 0
+        with ThreadPoolExecutor(max_workers=workers) as pool:
+            futures = {pool.submit(fetch, j): j for j in demo_jobs + train_jobs}
+            for fut in as_completed(futures):
+                _, ok = fut.result()
+                done += ok
+                failed += not ok
+                if verbose and done and done % 25 == 0:
+                    print(f"  downloaded {done} ({failed} skipped, "
+                          f"{(deadline - time.time()) / 60:.1f} min left)")
+                # stop early once we have enough, or once the clock runs out
+                if (len(list(train_dir.glob("*.png"))) >= n_train
+                        or time.time() > deadline):
+                    for f in futures:
+                        f.cancel()
+                    break
+        if verbose:
+            print(f"  downloaded {done} images ({failed} skipped).")
         source = "SDSS"
     else:
         source = "simulated"

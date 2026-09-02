@@ -1,7 +1,12 @@
-# Demo script — 12 minutes
+# Demo script — 11 minutes of content, 15 minutes in the room
 
-Beat by beat. Times are cumulative. The italics are things worth actually
-saying out loud; everything else is stage direction.
+Beat by beat. Times are cumulative and assume you are talking while cells
+run. The italics are things worth actually saying out loud; everything else
+is stage direction.
+
+**The budget:** 11 minutes of material, which lands at 13–15 in a real room
+once people react. If you are running long, the cut list is at the bottom —
+cut from it in order, and never cut beat 7.
 
 ---
 
@@ -19,28 +24,31 @@ it."*
 Then say the honest thing up front, because it buys you credibility for the
 rest:
 
-*"This model trained in about ten minutes yesterday. It is not
-sophisticated. A motivated sophomore could build it."*
+*"This model trained in under a minute yesterday. It is not sophisticated.
+A motivated sophomore could build it."*
 
 ---
 
 ### 1:00 — Cell 1: load the model (30 sec)
 
-It prints the number of parameters and the training time. Read it out.
+It prints the number of parameters and the training time. Read them out.
 
-*"Half a million numbers. That's small — the models you've read about in the
-news have a million times more. This one runs on a laptop."*
+*"1.2 million numbers. That's small — the models you've read about in the
+news are roughly a million times bigger. This one is a 5-megabyte file; it
+would fit on a phone."*
 
 ---
 
-### 1:30 — Cell 2: the truth image (1 min)
+### 1:30 — Cell 2: the truth image (45 sec)
 
 *"This is a real galaxy, from a public archive that anyone in this room can
 download from tonight. Remember what it looks like — it's the answer key."*
 
+Don't linger. It's a pretty picture; they'll get the point in five seconds.
+
 ---
 
-### 2:30 — Cell 3: ruin it on purpose (1.5 min)
+### 2:15 — Cell 3: ruin it on purpose (1.5 min)
 
 This is the beat most people find counterintuitive, so slow down here.
 
@@ -58,35 +66,50 @@ Most rooms say "almost none." Let that sit.
 
 ---
 
-### 4:00 — Cell 4: the reveal (2 min)
+### 3:45 — Cell 4: the reveal (2 min)
 
-Run it. Don't narrate while it renders. Let them look.
+Run it. **Don't narrate while it renders.** Let them look for a full five
+seconds before you say anything.
 
 Point at panel two first: *"That's the ordinary way to enlarge an image —
 what your phone does when you pinch to zoom. No AI."* Then panel three:
 *"That's the network."* Then panel four: *"And that's the truth, for
 comparison."*
 
-*"It took a fifth of a second."*
+*"It took two thousandths of a second."*
 
 ---
 
-### 6:00 — Cell 5: zoom in (1 min)
+### 5:45 — Cell 5: zoom in (1 min)
 
 *"Same square of sky, blown up. This is where you can see what it actually
-recovered — and where it didn't."*
+recovered — and, just as importantly, where it didn't."*
+
+The AI panel is smooth and clean. The truth panel has structure in it that
+the AI simply did not recover. Point at that gap — it sets up the next beat.
 
 ---
 
-### 7:00 — Cells 6–7: where it's wrong (2 min) ← **the important one**
+### 6:45 — Cells 6–7: where it's wrong (2 min) ← **the important one**
 
-This is the beat that wins the argument. Don't rush it.
+This is the beat that wins the argument. Don't rush it, and don't cut it.
 
 *"Here's the part I'd want a student to understand before anything else.
 This model doesn't reveal hidden detail. It has learned what galaxies tend
 to look like, and it uses that expectation to guess. Usually the guess is
 good. Sometimes it invents a feature that isn't there — a perfectly
 plausible smudge where the real sky had nothing."*
+
+Then point at the two error maps, because they make the argument for you.
+The ordinary enlargement is wrong *everywhere*, evenly — that is just noise.
+The AI's errors are not spread out at all: they sit directly on the spiral
+arms, the core, and the bright knots.
+
+*"Look at where the AI is wrong. It isn't wrong at random. It is wrong in
+exactly the places where the galaxy has real structure — it cleaned up
+everything that was easy and guessed at everything that mattered. Its
+average error is two and a half times smaller, and every bit of what's left
+is in the part you actually wanted."*
 
 *"That's why nobody publishes an AI-sharpened image as evidence of a
 discovery. We use it to decide where to point the expensive telescope next.
@@ -96,32 +119,34 @@ If you only get one sentence into their heads today, make it that one.
 
 ---
 
-### 9:00 — Cell 8: the scoreboard (1 min)
+### 8:45 — Cell 8: the scoreboard (45 sec)
 
 *"And this is measured on galaxies the model never saw — because otherwise
 I'd just be showing you that it memorised its homework."*
 
 ---
 
-### 10:00 — Cells 9–10: let them pick one (1 min)
+### 9:30 — Cells 9–10: let them pick one (1 min)
 
 *"Someone call one out."*
 
 Type the name, run it. This is the moment the room stops watching a
-presentation and starts watching a tool. Worth the minute.
+presentation and starts watching a tool. Worth the minute — but only take
+one name, not three.
 
 ---
 
-### 11:00 — Cell 11: the arithmetic (1 min)
+### 10:30 — Cell 11: the arithmetic (30 sec)
 
 *"One galaxy is a party trick. Here's why observatories actually care."*
 
-Read the years-of-human-labour number out loud. *"That's the reason the field
-adopted this. Not novelty. Arithmetic."*
+Read the two numbers out loud: ninety-five years of human looking, versus a
+couple of days of one graphics card. *"That's the reason the field adopted
+this. Not novelty. Arithmetic."*
 
 ---
 
-### 12:00 — Close on the table, not the galaxy (1–2 min)
+### 11:00 — Close on the table, not the galaxy (1–2 min)
 
 Scroll to the final table. Read the left column, then the right.
 
@@ -141,6 +166,29 @@ Stop there. Don't add a summary.
 
 ---
 
+## If you are running long
+
+Cut in this order. Each cut is clean — nothing later depends on it.
+
+1. **Beat 9:30, "let them pick one"** (saves 1 min). The most tempting to
+   keep and the easiest to lose; the reveal already made the point.
+2. **Beat 10:30, the arithmetic** (saves 30 sec). Say the one sentence
+   instead of running the cell: *"It does this in two milliseconds, which is
+   why surveys can run it on a hundred million galaxies."*
+3. **Beat 5:45, the zoom** (saves 1 min). Only if you are badly over — it
+   sets up the honesty beat.
+
+Never cut beat 6:45. If you have three minutes left and are only at beat 4,
+skip straight to it.
+
+## If you are running short
+
+Take questions early rather than adding material — the questions below are
+the ones that actually get asked, and answering two of them is a better use
+of three minutes than another galaxy.
+
+---
+
 ## Questions you will probably get
 
 **"Isn't it just making things up?"**
@@ -150,7 +198,7 @@ to look, and not enough to claim a discovery. That distinction is the whole
 skill.
 
 **"Could a student really build this?"**
-The code is about 700 lines, and half of that is comments. A student with one
+The code is about 800 lines, and half of that is comments. A student with one
 semester of Python could build a rougher version in a weekend. The hard part
 isn't the network — it's designing the test that tells you whether it worked.
 
@@ -161,8 +209,8 @@ fake the held-out score. Assignments that ask "did it work, and how do you
 know?" are much harder to cheat than assignments that ask for an answer.
 
 **"Do we need GPUs?"**
-Not for this. It trains on a laptop overnight or a free Colab GPU in ten
-minutes. Cost of entry is zero.
+Not for this. It trains on a free Colab GPU in about ten minutes, and on a
+laptop overnight. Cost of entry is zero.
 
 **"What would this look like in my subject?"**
 Same skeleton, different data: damaged historical text, noisy audio, low-res
