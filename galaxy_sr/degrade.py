@@ -54,12 +54,6 @@ def degrade(hr: torch.Tensor, factor: int = 4, sigma: float = 1.6,
     return lr.clamp(0, 1)
 
 
-def bicubic_up(lr: torch.Tensor, factor: int = 4) -> torch.Tensor:
-    """The classic, non-AI way to enlarge an image. Our baseline to beat."""
-    return F.interpolate(lr, scale_factor=factor, mode="bicubic",
-                         align_corners=False).clamp(0, 1)
-
-
 def psnr(a: torch.Tensor, b: torch.Tensor) -> float:
     """Peak signal-to-noise ratio in dB. Higher = closer to the truth."""
     mse = F.mse_loss(a.clamp(0, 1), b.clamp(0, 1)).item()

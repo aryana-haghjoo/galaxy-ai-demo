@@ -10,12 +10,11 @@ import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 
-from .degrade import degrade, bicubic_up
+from .degrade import degrade
 
 INK = "#1a1a1a"
 MUTED = "#6b6b6b"
 AI = "#2f6fb5"       # the model
-BASE = "#9a9a9a"     # the non-AI baseline
 
 plt.rcParams.update({
     "figure.facecolor": "white",
@@ -78,7 +77,7 @@ def time_sharpen(model, low_res: torch.Tensor, repeats: int = 5) -> float:
 def run_all(model, image: np.ndarray, factor: int | None = None,
             sigma: float | None = None, noise: float | None = None,
             seed: int = 0) -> dict:
-    """Truth -> simulated small telescope -> both reconstructions.
+    """Truth -> simulated small telescope -> the model's reconstruction.
 
     The damage defaults to whatever this model was trained to undo, which is
     recorded in the checkpoint. Override it only to show what happens when
@@ -94,7 +93,6 @@ def run_all(model, image: np.ndarray, factor: int | None = None,
     return {
         "truth": hr,
         "low": lo,
-        "classic": bicubic_up(lo, factor),
         "ai": sharpen(model, lo),
         "factor": factor,
     }
@@ -116,8 +114,7 @@ def compare(res: dict, zoom: tuple | None = None, save: str | None = None,
     panels = [
         ("What the small telescope sees", res["low"],
          f"{res['low'].shape[-1]} x {res['low'].shape[-2]} pixels", True),
-        ("Enlarged the ordinary way", res["classic"], "no AI - just stretching the pixels", False),
-        ("Enlarged by the AI", res["ai"], "trained on other galaxies", False),
+        ("What the AI reconstructs", res["ai"], "trained on other galaxies", False),
     ]
     if show_truth:
         panels.append(("The real thing", res["truth"], "the original photograph", False))
@@ -144,11 +141,10 @@ def zoom_in(res: dict, x: int, y: int, size: int = 96, save: str | None = None):
     crops = [
         ("Small telescope", res["low"][..., y // f:(y + size) // f,
                                        x // f:(x + size) // f], True),
-        ("Ordinary enlargement", res["classic"][..., y:y + size, x:x + size], False),
         ("AI", res["ai"][..., y:y + size, x:x + size], False),
         ("Truth", res["truth"][..., y:y + size, x:x + size], False),
     ]
-    fig, axes = plt.subplots(1, 4, figsize=(20, 5.6))
+    fig, axes = plt.subplots(1, 3, figsize=(15, 5.6))
     for ax, (title, t, near) in zip(axes, crops):
         _imshow(ax, t, title, nearest=near)
     fig.suptitle("Same patch of sky, zoomed in", fontsize=17, y=1.02)
@@ -158,23 +154,21 @@ def zoom_in(res: dict, x: int, y: int, size: int = 96, save: str | None = None):
 
 
 def where_it_erred(res: dict, save: str | None = None):
-    """The honesty slide: show where the AI got the galaxy wrong."""
-    err_ai = (res["ai"] - res["truth"]).abs().mean(1)[0].numpy()
-    err_bi = (res["classic"] - res["truth"]).abs().mean(1)[0].numpy()
+    """The honesty slide: the answer, the truth, and the gap between them."""
+    err = (res["ai"] - res["truth"]).abs().mean(1)[0].numpy()
     # clip the scale at the 99.5th percentile so the structure is visible
-    vmax = float(np.percentile(np.concatenate([err_ai.ravel(), err_bi.ravel()]),
-                               99.5))
+    vmax = float(np.percentile(err, 99.5))
 
     fig, axes = plt.subplots(1, 3, figsize=(17.5, 6.2),
                              constrained_layout=True)
-    _imshow(axes[0], res["ai"], "The AI's answer")
-    for ax, err, name in zip(axes[1:], (err_bi, err_ai),
-                             ("the ordinary enlargement", "the AI")):
-        im = ax.imshow(err, cmap="magma", vmin=0, vmax=vmax)
-        ax.set_title(f"Where {name} is wrong", fontsize=16, pad=10)
-        ax.set_xticks([]); ax.set_yticks([])
-        ax.set_xlabel(f"typically off by {255 * err.mean():.1f} shades "
-                      "out of 255", fontsize=12, color=MUTED, labelpad=8)
+    _imshow(axes[0], res["ai"], "The AI's answer", "looks clean")
+    _imshow(axes[1], res["truth"], "The real thing", "the original photograph")
+
+    im = axes[2].imshow(err, cmap="magma", vmin=0, vmax=vmax)
+    axes[2].set_title("Where the AI is wrong", fontsize=16, pad=10)
+    axes[2].set_xticks([]); axes[2].set_yticks([])
+    axes[2].set_xlabel(f"typically off by {255 * err.mean():.1f} shades "
+                       "out of 255", fontsize=12, color=MUTED, labelpad=8)
     cb = fig.colorbar(im, ax=axes[2], fraction=0.046, pad=0.02,
                       label="brighter = further from the truth")
     cb.set_ticks(cb.get_ticks())
@@ -184,31 +178,61 @@ def where_it_erred(res: dict, save: str | None = None):
 
 
 def scoreboard(info: dict, save: str | None = None):
-    """Two bars: the AI against the ordinary method, on images it never saw.
+    """One bar per held-out galaxy: is it this good on all of them, or was
+    the one I showed you a lucky pick?
 
     Plotted as *how wrong the picture is*, not in decibels -- a shorter bar
-    is a better answer, which needs no explaining to anyone.
+    is a better answer, which needs no explaining to anyone. Sorted worst to
+    best so the eye lands on the worst case first, which is the honest place
+    for it to land.
     """
+    each = info.get("psnr_each")
+    if not each:
+        return _score_summary(info, save)
+
     # PSNR -> typical error per pixel, on the 0-255 scale everyone knows
-    err = [255 * 10 ** (-info["psnr_bicubic"] / 20),
-           255 * 10 ** (-info["psnr_model"] / 20)]
-    names = ["Ordinary\nenlargement", "This AI model"]
-    fig, ax = plt.subplots(figsize=(6.8, 5.4))
-    bars = ax.bar(names, err, color=[BASE, AI], width=0.55)
-    for b, v in zip(bars, err):
-        ax.text(b.get_x() + b.get_width() / 2, v + max(err) * 0.02,
-                f"{v:.1f}", ha="center", fontsize=15, color=INK)
-    ax.set_ylim(0, max(err) * 1.25)
-    ax.set_ylabel("how far off the picture is\n"
+    err = np.sort([255 * 10 ** (-p / 20) for p in each])[::-1]
+    mean_err = 255 * 10 ** (-info["psnr_model"] / 20)
+
+    fig, ax = plt.subplots(figsize=(9.5, 5.4))
+    ax.bar(np.arange(len(err)), err, color=AI, width=0.72)
+    ax.axhline(mean_err, color=INK, lw=1.4, ls="--")
+    # sits at the right-hand end, where the bars are shortest and the space
+    # above the mean line is empty
+    ax.text(len(err) - 0.6, mean_err + max(err) * 0.03,
+            f"typical: {mean_err:.1f}", ha="right", va="bottom",
+            fontsize=13, color=INK)
+
+    ax.set_ylim(0, max(err) * 1.3)
+    ax.set_xlim(-1, len(err))
+    ax.set_xticks([])
+    ax.set_xlabel(f"each bar is one of {len(err)} galaxies the model never "
+                  "trained on", labelpad=10)
+    ax.set_ylabel("how far off the answer is\n"
                   "(shades of brightness, out of 255)")
-    ax.set_title("Scored on galaxies the model never trained on",
+    ax.set_title("Not a lucky picture: every unseen galaxy, scored",
                  fontsize=15, pad=14)
-    ax.text(0.5, 0.94, f"{err[0] / err[1]:.1f}x closer to the truth",
-            transform=ax.transAxes, ha="center", fontsize=15, color=AI)
+    ax.annotate("worst one", (0, err[0]), textcoords="offset points",
+                xytext=(2, 8), fontsize=12, color=MUTED)
     for s_ in ("top", "right"):
         ax.spines[s_].set_visible(False)
     ax.grid(axis="y", color="#eeeeee", lw=1)
     ax.set_axisbelow(True)
+    fig.tight_layout()
+    _save(fig, save)
+    return fig
+
+
+def _score_summary(info: dict, save: str | None = None):
+    """Fallback for checkpoints trained before per-galaxy scores were kept."""
+    mean_err = 255 * 10 ** (-info["psnr_model"] / 20)
+    fig, ax = plt.subplots(figsize=(6.8, 4.2))
+    ax.axis("off")
+    ax.text(0.5, 0.62, f"{mean_err:.1f}", ha="center", fontsize=54, color=AI)
+    ax.text(0.5, 0.34, "shades of brightness off the truth, out of 255\n"
+            f"averaged over {info.get('n_val_images', '?')} galaxies "
+            "the model never trained on",
+            ha="center", fontsize=13, color=MUTED)
     fig.tight_layout()
     _save(fig, save)
     return fig

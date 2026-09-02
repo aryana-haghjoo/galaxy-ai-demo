@@ -70,13 +70,12 @@ Most rooms say "almost none." Let that sit.
 
 Run it. **Don't narrate while it renders.** Let them look for a full five
 seconds before you say anything. This is the picture the whole talk is for:
-panels one and two are an unreadable blur, panel three has spiral arms and
-individual clusters of new stars in it.
+panel one is an unreadable blur, panel two has spiral arms and individual
+clusters of new stars in it.
 
-Point at panel two first: *"That's the ordinary way to enlarge an image —
-what your phone does when you pinch to zoom. No AI."* Then panel three:
-*"That's the network."* Then panel four: *"And that's the truth, for
-comparison."*
+Point at panel one first: *"That's everything the small telescope recorded.
+That's all the network is given."* Then panel two: *"That's what it made of
+it."* Then panel three: *"And that's the truth, for comparison."*
 
 *"It took two thousandths of a second."*
 
@@ -102,18 +101,21 @@ to look like, and it uses that expectation to guess. Usually the guess is
 good. Sometimes it invents a feature that isn't there — a perfectly
 plausible smudge where the real sky had nothing."*
 
-Then point at the two error maps, because they make the argument for you —
-and the thing to notice is that **they look almost the same.**
+Then put your hand on panel one, and then on panel three, because the two
+of them make the argument for you.
 
-*"On the left is where the ordinary enlargement went wrong. On the right,
-the AI. They're wrong in the same places: the arms, the core, the bright
-clusters. The AI is a little less wrong — but only a little."*
+*"That's the answer, and it looks clean. This is a map of how wrong it is —
+brighter means further from the truth."*
 
-*"Which is strange, isn't it, because the AI's picture looked so much
-better. That's the point. It didn't uncover what was really there. It
-painted in something plausible, in exactly the places where the real detail
-was missing. Plausible is not the same as true, and your eye cannot tell
-them apart. This measurement can."*
+*"And look at where the error is. It isn't spread evenly over the picture.
+It's piled up on the arms, the core, the bright clusters — which is exactly
+where the real detail was, and exactly where the network had nothing to go
+on and had to guess."*
+
+*"That's the point. It didn't uncover what was really there. It painted in
+something plausible, in exactly the places where the real detail was
+missing. Plausible is not the same as true, and your eye cannot tell them
+apart. This measurement can."*
 
 *"That's why nobody publishes an AI-sharpened image as evidence of a
 discovery. We use it to decide where to point the expensive telescope next.
@@ -125,12 +127,16 @@ If you only get one sentence into their heads today, make it that one.
 
 ### 8:45 — Cell 8: the scoreboard (45 sec)
 
-Two bars: how far off each answer is. Shorter is better. No units to explain.
+One bar per galaxy, sorted worst first. How far off the answer is, so
+shorter is better. No units to explain.
 
-*"And this is measured on galaxies the model never saw — because otherwise
-I'd just be showing you that it memorised its homework."*
+*"Every one of these is a galaxy the model never saw during training —
+because otherwise I'd just be showing you that it memorised its homework.
+And I'm showing you all thirty, not the flattering one."*
 
-Read the multiplier off the screen (it's about 1.7× closer to the truth).
+Then point at the tallest bar on the left: *"That's its worst galaxy out of
+thirty, and it's barely worse than its best. That's the answer to 'did he
+pick a lucky picture'."*
 
 ---
 
@@ -224,9 +230,10 @@ to look, and not enough to claim a discovery. That distinction is the whole
 skill.
 
 **"How much better is it, really?"** *(the sharp question — be ready for it)*
-Measured pixel by pixel, about 1.7× closer to the truth. That is a real
-improvement, and it is a *lot* smaller than the improvement your eye thinks
-it is seeing. Say so plainly:
+Don't reach for a number here; go back to the zoom and the error map. The
+truth panel has structure in it the network simply did not recover, and the
+error map shows the mistakes landing precisely on the interesting parts of
+the galaxy. Say so plainly:
 
 *"The picture looks enormously better. It measures a bit better. That gap —
 between how good something looks and how right it is — is the single most

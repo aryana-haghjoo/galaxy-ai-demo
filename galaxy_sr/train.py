@@ -17,7 +17,7 @@ import torch.nn.functional as F
 from torch.utils.data import Dataset, DataLoader
 
 from .data import load_images
-from .degrade import degrade, bicubic_up, psnr
+from .degrade import degrade, psnr
 from .model import GalaxySR
 
 
@@ -112,20 +112,21 @@ def train(data_dir: str = "data/train", out: str = "weights/galaxy_sr.pt",
                 run.log({"loss": loss.item(),
                          "lr": sched.get_last_lr()[0]}, step=step)
 
-    # score on held-out images: model vs. the classic non-AI method
+    # score on held-out images, one at a time -- the spread across galaxies
+    # is what shows the demo galaxy was not a lucky pick, so keep every score
+    # rather than only their average.
     model.eval()
-    p_model, p_bicubic = [], []
+    p_model = []
     with torch.no_grad():
         for im in val_images:
             h, w = (im.shape[0] // factor) * factor, (im.shape[1] // factor) * factor
             hr = torch.from_numpy(im[:h, :w]).permute(2, 0, 1)[None].to(device)
             lo = degrade(hr, factor, sigma, noise)
             p_model.append(psnr(model(lo), hr))
-            p_bicubic.append(psnr(bicubic_up(lo, factor), hr))
 
     info = {
         "psnr_model": float(np.mean(p_model)),
-        "psnr_bicubic": float(np.mean(p_bicubic)),
+        "psnr_each": [float(p) for p in p_model],
         "n_train_images": len(train_images),
         "n_val_images": len(val_images),
         "steps": steps,
@@ -141,9 +142,9 @@ def train(data_dir: str = "data/train", out: str = "weights/galaxy_sr.pt",
                out)
 
     print(f"\nsaved {out}")
-    print(f"  held-out PSNR  ->  AI {info['psnr_model']:.2f} dB   vs   "
-          f"classic {info['psnr_bicubic']:.2f} dB "
-          f"(+{info['psnr_model'] - info['psnr_bicubic']:.2f})")
+    print(f"  held-out PSNR  ->  {info['psnr_model']:.2f} dB mean over "
+          f"{len(p_model)} unseen galaxies "
+          f"(worst {min(p_model):.2f}, best {max(p_model):.2f})")
     print(f"  trained in {info['minutes']:.1f} minutes on {device}")
 
     if run:
@@ -174,7 +175,8 @@ def _wandb_finish(run, model, info, cfg, out, val_images, factor, sigma,
 
     from . import viz
 
-    run.summary.update({k: v for k, v in info.items() if k != "history"})
+    run.summary.update({k: v for k, v in info.items()
+                        if k not in ("history", "psnr_each")})
 
     figs = {"scoreboard": viz.scoreboard(info),
             "learning_curve": viz.learning_curve(info)}
@@ -187,7 +189,6 @@ def _wandb_finish(run, model, info, cfg, out, val_images, factor, sigma,
     art = wandb.Artifact("galaxy_sr", type="model", metadata={
         **cfg,
         "psnr_model": info["psnr_model"],
-        "psnr_bicubic": info["psnr_bicubic"],
         "n_train_images": info["n_train_images"],
         "n_val_images": info["n_val_images"],
         "device": device,

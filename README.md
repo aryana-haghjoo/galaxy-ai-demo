@@ -117,9 +117,11 @@ guess about what the missing pixels were. That is exactly why it sometimes
 invents things — which is the most useful thing in the demo to show teachers.
 
 Measured on 30 held-out galaxies the model never trained on, the AI's answer
-is about **1.7x closer to the truth** than ordinary enlargement (36.0 dB vs
-31.4 dB PSNR, +4.6 dB). The notebook reports this as a multiplier rather than
-in decibels, because the audience is teachers, not signal processors.
+is typically off by **4.1 shades of brightness out of 255** (36.0 dB PSNR),
+and its worst galaxy of the thirty is off by 5.0. The spread is tight enough
+that no single flattering galaxy is doing the persuading, which is the point
+of plotting all thirty. The notebook shows per-galaxy error rather than
+decibels, because the audience is teachers, not signal processors.
 
 Data: [SDSS](https://www.sdss.org/) DR17 image cutout service, public, no key.
 
