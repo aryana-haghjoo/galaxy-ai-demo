@@ -68,7 +68,7 @@ Two cells are meant to be edited live:
 
 - `NAME = list(galaxies)[0]` — which galaxy you open with
 - `PICK = list(galaxies)[1]` — the one the audience calls out
-- `X, Y, SIZE = 150, 120, 160` — where the zoom box sits
+- `X, Y, SIZE = 160, 224, 160` — where the zoom box sits
 
 Nothing else needs touching.
 
@@ -93,11 +93,13 @@ In `01_train.ipynb`:
 | `noise` | how noisy its detector is |
 | `blocks`, `channels` | model size. Bigger = slower but sharper |
 
-`sigma` and `noise` are set deliberately high (2.8 and 0.05). Milder damage
-gives a better score but a *worse demo* — from the back of a room, the AI
-panel and the ordinary-enlargement panel look identical. Cranking them up
-makes the difference read instantly, and makes the AI's mistakes visible
-too, which for this audience is the more useful half.
+The damage is deliberately **blur-heavy** (`sigma=5.0`) and **noise-light**
+(`noise=0.008`), and that choice is the difference between a demo that lands
+and one that doesn't. A noisy input reads as *broken* from the back of a
+room; a blurred one reads as *out of focus* — and "out of focus becomes
+sharp" is the story a non-specialist audience actually follows. Turning the
+noise up instead buys a bigger score (denoising is cheap signal-to-noise)
+and a worse talk.
 
 The demo notebook reads these back out of the checkpoint, so if you retrain
 with different values everything downstream follows automatically.
@@ -114,14 +116,19 @@ galaxy-shaped detail generally looks like, and uses that to make an educated
 guess about what the missing pixels were. That is exactly why it sometimes
 invents things — which is the most useful thing in the demo to show teachers.
 
-Measured on 30 held-out galaxies the model never trained on:
-
-| | closeness to truth |
-|---|---|
-| Ordinary enlargement (bicubic) | 28.2 dB |
-| This model | 34.3 dB |
+Measured on 30 held-out galaxies the model never trained on, the AI's answer
+is about **1.7x closer to the truth** than ordinary enlargement (36.0 dB vs
+31.4 dB PSNR, +4.6 dB). The notebook reports this as a multiplier rather than
+in decibels, because the audience is teachers, not signal processors.
 
 Data: [SDSS](https://www.sdss.org/) DR17 image cutout service, public, no key.
+
+## How this was built
+
+Most of the code was drafted by [Claude](https://claude.ai) and then read,
+corrected and tested by hand — the same describe / draft / **check** loop the
+demo argues is the thing worth teaching. The checking was not ceremonial: the
+first working version was convincing and quietly wrong in several places.
 
 ## Licence
 

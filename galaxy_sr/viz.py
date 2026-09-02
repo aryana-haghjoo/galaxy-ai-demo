@@ -10,7 +10,7 @@ import numpy as np
 import torch
 from matplotlib.patches import Rectangle
 
-from .degrade import degrade, bicubic_up, psnr
+from .degrade import degrade, bicubic_up
 
 INK = "#1a1a1a"
 MUTED = "#6b6b6b"
@@ -116,11 +116,11 @@ def compare(res: dict, zoom: tuple | None = None, save: str | None = None,
     panels = [
         ("What the small telescope sees", res["low"],
          f"{res['low'].shape[-1]} x {res['low'].shape[-2]} pixels", True),
-        ("Enlarged the ordinary way", res["classic"], "no AI - just interpolation", False),
+        ("Enlarged the ordinary way", res["classic"], "no AI - just stretching the pixels", False),
         ("Enlarged by the AI", res["ai"], "trained on other galaxies", False),
     ]
     if show_truth:
-        panels.append(("The real thing", res["truth"], "ground truth", False))
+        panels.append(("The real thing", res["truth"], "the original photograph", False))
 
     fig, axes = plt.subplots(1, len(panels), figsize=(5.2 * len(panels), 5.9))
     for ax, (title, t, sub, near) in zip(np.atleast_1d(axes), panels):
@@ -130,13 +130,10 @@ def compare(res: dict, zoom: tuple | None = None, save: str | None = None,
             ax.add_patch(Rectangle((x, y), s, s, fill=False, lw=2.0,
                                    edgecolor="#e8b84b"))
     fig.tight_layout()
-    if show_truth:
-        p_ai = psnr(res["ai"], res["truth"])
-        p_bi = psnr(res["classic"], res["truth"])
-        fig.text(0.5, -0.03,
-                 f"Closeness to the truth:  AI {p_ai:.1f} dB   vs   "
-                 f"ordinary enlargement {p_bi:.1f} dB     (higher is better)",
-                 ha="center", fontsize=15, color=INK)
+    # Deliberately no score under this figure. It is the "look at it" beat;
+    # the honest measurement gets its own slide later, on 30 held-out
+    # galaxies rather than the one that was picked to be shown. A number
+    # here just invites the room to argue with it instead of looking.
     _save(fig, save)
     return fig
 
@@ -176,29 +173,40 @@ def where_it_erred(res: dict, save: str | None = None):
         im = ax.imshow(err, cmap="magma", vmin=0, vmax=vmax)
         ax.set_title(f"Where {name} is wrong", fontsize=16, pad=10)
         ax.set_xticks([]); ax.set_yticks([])
-        ax.set_xlabel(f"average error {err.mean():.4f}", fontsize=12, color=MUTED,
-                      labelpad=8)
-    fig.colorbar(im, ax=axes[2], fraction=0.046, pad=0.02,
-                 label="brighter = further from the truth")
+        ax.set_xlabel(f"typically off by {255 * err.mean():.1f} shades "
+                      "out of 255", fontsize=12, color=MUTED, labelpad=8)
+    cb = fig.colorbar(im, ax=axes[2], fraction=0.046, pad=0.02,
+                      label="brighter = further from the truth")
+    cb.set_ticks(cb.get_ticks())
+    cb.set_ticklabels([f"{255 * t:.0f}" for t in cb.get_ticks()])
     _save(fig, save)
     return fig
 
 
 def scoreboard(info: dict, save: str | None = None):
-    """Two bars: the AI against the ordinary method, on images it never saw."""
-    vals = [info["psnr_bicubic"], info["psnr_model"]]
+    """Two bars: the AI against the ordinary method, on images it never saw.
+
+    Plotted as *how wrong the picture is*, not in decibels -- a shorter bar
+    is a better answer, which needs no explaining to anyone.
+    """
+    # PSNR -> typical error per pixel, on the 0-255 scale everyone knows
+    err = [255 * 10 ** (-info["psnr_bicubic"] / 20),
+           255 * 10 ** (-info["psnr_model"] / 20)]
     names = ["Ordinary\nenlargement", "This AI model"]
-    fig, ax = plt.subplots(figsize=(6.4, 5.2))
-    bars = ax.bar(names, vals, color=[BASE, AI], width=0.55)
-    for b, v in zip(bars, vals):
-        ax.text(b.get_x() + b.get_width() / 2, v + 0.15, f"{v:.1f} dB",
-                ha="center", fontsize=15, color=INK)
-    ax.set_ylim(0, max(vals) * 1.18)
-    ax.set_ylabel("closeness to the true image (dB)")
+    fig, ax = plt.subplots(figsize=(6.8, 5.4))
+    bars = ax.bar(names, err, color=[BASE, AI], width=0.55)
+    for b, v in zip(bars, err):
+        ax.text(b.get_x() + b.get_width() / 2, v + max(err) * 0.02,
+                f"{v:.1f}", ha="center", fontsize=15, color=INK)
+    ax.set_ylim(0, max(err) * 1.25)
+    ax.set_ylabel("how far off the picture is\n"
+                  "(shades of brightness, out of 255)")
     ax.set_title("Scored on galaxies the model never trained on",
                  fontsize=15, pad=14)
-    for s in ("top", "right"):
-        ax.spines[s].set_visible(False)
+    ax.text(0.5, 0.94, f"{err[0] / err[1]:.1f}x closer to the truth",
+            transform=ax.transAxes, ha="center", fontsize=15, color=AI)
+    for s_ in ("top", "right"):
+        ax.spines[s_].set_visible(False)
     ax.grid(axis="y", color="#eeeeee", lw=1)
     ax.set_axisbelow(True)
     fig.tight_layout()

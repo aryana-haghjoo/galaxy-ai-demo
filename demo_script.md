@@ -69,7 +69,9 @@ Most rooms say "almost none." Let that sit.
 ### 3:45 — Cell 4: the reveal (2 min)
 
 Run it. **Don't narrate while it renders.** Let them look for a full five
-seconds before you say anything.
+seconds before you say anything. This is the picture the whole talk is for:
+panels one and two are an unreadable blur, panel three has spiral arms and
+individual clusters of new stars in it.
 
 Point at panel two first: *"That's the ordinary way to enlarge an image —
 what your phone does when you pinch to zoom. No AI."* Then panel three:
@@ -100,16 +102,18 @@ to look like, and it uses that expectation to guess. Usually the guess is
 good. Sometimes it invents a feature that isn't there — a perfectly
 plausible smudge where the real sky had nothing."*
 
-Then point at the two error maps, because they make the argument for you.
-The ordinary enlargement is wrong *everywhere*, evenly — that is just noise.
-The AI's errors are not spread out at all: they sit directly on the spiral
-arms, the core, and the bright knots.
+Then point at the two error maps, because they make the argument for you —
+and the thing to notice is that **they look almost the same.**
 
-*"Look at where the AI is wrong. It isn't wrong at random. It is wrong in
-exactly the places where the galaxy has real structure — it cleaned up
-everything that was easy and guessed at everything that mattered. Its
-average error is two and a half times smaller, and every bit of what's left
-is in the part you actually wanted."*
+*"On the left is where the ordinary enlargement went wrong. On the right,
+the AI. They're wrong in the same places: the arms, the core, the bright
+clusters. The AI is a little less wrong — but only a little."*
+
+*"Which is strange, isn't it, because the AI's picture looked so much
+better. That's the point. It didn't uncover what was really there. It
+painted in something plausible, in exactly the places where the real detail
+was missing. Plausible is not the same as true, and your eye cannot tell
+them apart. This measurement can."*
 
 *"That's why nobody publishes an AI-sharpened image as evidence of a
 discovery. We use it to decide where to point the expensive telescope next.
@@ -121,8 +125,12 @@ If you only get one sentence into their heads today, make it that one.
 
 ### 8:45 — Cell 8: the scoreboard (45 sec)
 
+Two bars: how far off each answer is. Shorter is better. No units to explain.
+
 *"And this is measured on galaxies the model never saw — because otherwise
 I'd just be showing you that it memorised its homework."*
+
+Read the multiplier off the screen (it's about 1.7× closer to the truth).
 
 ---
 
@@ -166,6 +174,24 @@ Stop there. Don't add a summary.
 
 ---
 
+### If you are asked how you built it — say this (30 sec)
+
+Worth volunteering rather than waiting to be asked, because it disarms the
+obvious objection and it is the most transferable thing in the talk.
+
+*"I should say how this was made. I didn't write most of this code by hand.
+I described what I wanted to Claude — which is the same sort of tool as the
+Gemini and NotebookLM accounts the district already gives you — and it wrote
+the first draft. Then I read it, and I fixed it, and I tested it. The first
+version looked completely convincing and was quietly wrong in three places.
+I only found them because I went looking."*
+
+*"That's the whole workflow: describe what you want, let it draft, check it
+yourself. Our students can already do the first two steps. The third one is
+the job."*
+
+---
+
 ## If you are running long
 
 Cut in this order. Each cut is clean — nothing later depends on it.
@@ -196,6 +222,19 @@ Partly, yes — and that's the honest answer. It's making a statistically
 informed guess. It's right on average, which is enough to prioritise where
 to look, and not enough to claim a discovery. That distinction is the whole
 skill.
+
+**"How much better is it, really?"** *(the sharp question — be ready for it)*
+Measured pixel by pixel, about 1.7× closer to the truth. That is a real
+improvement, and it is a *lot* smaller than the improvement your eye thinks
+it is seeing. Say so plainly:
+
+*"The picture looks enormously better. It measures a bit better. That gap —
+between how good something looks and how right it is — is the single most
+useful thing on this screen, and it's why we still make the measurement
+instead of trusting the picture."*
+
+If a teacher asks you this, they have understood the talk better than most
+rooms do. Give them the honest answer; don't defend the number.
 
 **"Could a student really build this?"**
 The code is about 800 lines, and half of that is comments. A student with one
